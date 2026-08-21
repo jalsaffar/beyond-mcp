@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 license = {text = "Apache-2.0"}
 authors = [{name = "Drohi", email = "info@ecube-entertainment.com"}]
 dependencies = [
-  "mcp>=1.0",
+  "mcp>=1.9,<2.0",
 ]
 
 [project.scripts]
