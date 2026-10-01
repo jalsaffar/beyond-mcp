@@ -32,7 +32,12 @@ def _parse_allowed_hosts(raw: str) -> frozenset[str]:
 @dataclass(frozen=True)
 class BeyondConfig:
     host: str = "127.0.0.1"
-    osc_port: int = 12000
+    # 8000 is BEYOND's own default OSC input port ([OSC] PortIn in BEYOND.ini).
+    # The old default of 12000 matched nothing BEYOND ever listens on.
+    osc_port: int = 8000
+    # PangoTalk TCP command server ([NET] in BEYOND.ini) — request/response
+    # PangoScript, the only BEYOND channel that acknowledges commands.
+    talk_port: int = 16063
     allowed_hosts: frozenset[str] = field(default_factory=lambda: frozenset({"127.0.0.1", "localhost", "::1"}))
     safety_profile: str = "lab"
     read_only: bool = False
@@ -81,7 +86,8 @@ def load_config() -> BeyondConfig:
 
     config = BeyondConfig(
         host=host,
-        osc_port=_parse_port("BEYOND_OSC_PORT", "12000"),
+        osc_port=_parse_port("BEYOND_OSC_PORT", "8000"),
+        talk_port=_parse_port("BEYOND_TALK_PORT", "16063"),
         allowed_hosts=_parse_allowed_hosts(allowed_raw),
         safety_profile=profile,
         read_only=read_only,

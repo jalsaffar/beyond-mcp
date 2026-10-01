@@ -183,7 +183,7 @@ def _fake_client():
 def test_get_server_config():
     payload = json.loads(get_server_config())
     assert payload["host"] == "127.0.0.1"
-    assert payload["osc_port"] == 12000
+    assert payload["osc_port"] == 8000
     assert "target" in payload
     assert "allowed_hosts" in payload
     assert payload["safety_profile"] == "lab"
@@ -2480,10 +2480,10 @@ def test_type_tags_length_mismatch():
 # ================================================================
 
 
-def test_tool_count_is_117():
+def test_tool_count_is_123():
     from beyond_mcp.server import mcp as server_mcp
 
     tools = server_mcp._tool_manager._tools
-    assert len(tools) == 117, (
-        f"Expected 117 tools, got {len(tools)}: {sorted(tools.keys())}"
+    assert len(tools) == 123, (
+        f"Expected 123 tools, got {len(tools)}: {sorted(tools.keys())}"
     )

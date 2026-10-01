@@ -17,8 +17,11 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from . import reference as _reference
+from . import workspace as _workspace
 from .client import BeyondClient, build_osc_bundle, build_osc_message
 from .config import load_config
+from .talk import PangoTalkClient
 
 
 mcp = FastMCP(
@@ -1272,6 +1275,69 @@ def virtual_lj(enabled: int) -> str:
 def virtual_lj_fx(lj_index: int, fx_index: int) -> str:
     """Trigger a Virtual LJ effect."""
     return _json(_osc("/beyond/general/VLJFX", [lj_index, fx_index]))
+
+
+# ============================================================
+# PangoTalk (TCP PangoScript) + Help Reference
+# ============================================================
+
+
+@mcp.tool()
+@_handle_errors
+def pango_talk(command: str, confirm: bool = False) -> str:
+    """Send one PangoScript command over the PangoTalk TCP channel and return
+    BEYOND's reply. This is the only transport with acknowledgement (OK/ERROR
+    when Echo is on) and it reaches the FULL PangoScript surface — playlists,
+    LoadWorkspace, zones, variables, timeline — far beyond the OSC map.
+    Requires the Talk server to be enabled once in BEYOND (Settings >
+    Network); use pango_talk_probe to check. PangoScript can fire lasers, so
+    this respects read-only mode and the confirm-destructive flag."""
+    _check_destructive("pango_talk", confirm)
+    result = PangoTalkClient(load_config()).send(command)
+    return _json(result)
+
+
+@mcp.tool()
+@_handle_errors
+def workspace_info() -> str:
+    """Read-only: which workspace BEYOND has loaded and its Talk-server settings, from BEYOND.ini in the
+    BEYOND folder (Dropbox/BEYOND555 or $BEYOND_HOME). No network, nothing written."""
+    return _json(_workspace.read_ini())
+
+
+@mcp.tool()
+@_handle_errors
+def workspace_pages(workspace: str = "") -> str:
+    """Read-only: page numbers and names of the loaded (or named) workspace, from BEYOND's exported page files
+    PAGES/<workspace>/Page_NNN_<name>.BeyondPage. Cue names inside BEYOND's files are compressed and not
+    readable offline — export the pages from BEYOND again when they change."""
+    return _json(_workspace.pages(workspace=workspace or None))
+
+
+@mcp.tool()
+@_handle_errors
+def workspace_files(kind: str = "zones") -> str:
+    """Read-only: list BEYOND's saved files of one kind by name and date: pages | zones | projectors | shows |
+    showlists | workspaces | quicktargets."""
+    return _json(_workspace.files(kind))
+
+
+@mcp.tool()
+@_handle_errors
+def pango_talk_probe() -> str:
+    """Read-only check whether BEYOND's PangoTalk TCP server is reachable at
+    the configured host/port. Explains how to enable it if not."""
+    return _json(PangoTalkClient(load_config()).probe())
+
+
+@mcp.tool()
+@_handle_errors
+def pango_reference(query: str, limit: int = 12) -> str:
+    """Search the local BEYOND help file for exact PangoScript / OSC command
+    syntax (read-only). First call decompiles BEYOND_Help.chm into a per-user
+    cache; afterwards lookups are instant. Use before composing pango_talk or
+    raw OSC calls so the syntax matches the installed BEYOND version."""
+    return _json(_reference.search(query, limit=limit))
 
 
 # ============================================================

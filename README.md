@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/Tests-310-F59E0B?style=for-the-badge" alt="310 Tests">
 </p>
 
-An MCP server for [Pangolin BEYOND](https://pangolin.com/pages/beyond) laser software. Exposes 117 tools across 20 categories covering show control, cue management, zone configuration, geometric correction, live parameter control, effects, projector alignment, safety limiters, and more — all via OSC.
+An MCP server for [Pangolin BEYOND](https://pangolin.com/pages/beyond) laser software. Exposes 120 tools across 21 categories covering show control, cue management, zone configuration, geometric correction, live parameter control, effects, projector alignment, safety limiters, and more — all via OSC.
 
 Built for live production. Pairs with [grandMA2 MCP](https://github.com/drohi-r/grandma2-mcp), [Resolume MCP](https://github.com/drohi-r/resolume-mcp), [MADRIX MCP](https://github.com/drohi-r/madrix-mcp), and [Companion MCP](https://github.com/drohi-r/companion-mcp) for full AI-driven show control.
 
@@ -30,7 +30,7 @@ uv sync
 uv run python -m beyond_mcp
 ```
 
-Make sure BEYOND is running with OSC input enabled (configurable via `BEYOND_OSC_PORT`, defaults to 12000).
+Make sure BEYOND is running with OSC input enabled (configurable via `BEYOND_OSC_PORT`, defaults to 8000 — BEYOND's own default OSC input port; the OSC server ships disabled and must be enabled once in BEYOND's network settings). The PangoTalk TCP channel (`BEYOND_TALK_PORT`, default 16063) adds acknowledged PangoScript commands via the `pango_talk` tool.
 
 For remote control:
 - use LAN or WireGuard, not the public internet
@@ -64,7 +64,8 @@ See also:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `BEYOND_HOST` | `127.0.0.1` | BEYOND instance IP |
-| `BEYOND_OSC_PORT` | `12000` | OSC receive port |
+| `BEYOND_OSC_PORT` | `8000` | OSC receive port (BEYOND default) |
+| `BEYOND_TALK_PORT` | `16063` | PangoTalk TCP command port |
 | `BEYOND_ALLOWED_HOSTS` | `127.0.0.1,localhost,::1` | Comma-separated allowlist for target hosts. Set `*` to allow any. |
 | `BEYOND_SAFETY_PROFILE` | `lab` | Safety preset: `lab`, `show-safe`, or `read-only` |
 | `BEYOND_READ_ONLY` | `0` | Set to `1` for read-only mode (blocks all write operations) |
@@ -75,9 +76,9 @@ See also:
 
 ```mermaid
 graph TD
-    A["Beyond MCP Server<br/><code>beyond_mcp</code><br/>117 tools · 20 categories · safety gate"] --> B
+    A["Beyond MCP Server<br/><code>beyond_mcp</code><br/>120 tools · 21 categories · safety gate"] --> B
     B["OSC Client<br/>UDP fire-and-forget"] --> C
-    C["Pangolin BEYOND<br/>OSC input on port 12000"]
+    C["Pangolin BEYOND<br/>OSC input on port 8000"]
 
     D["Safety Profiles<br/>lab · show-safe · read-only"] -.-> A
     E["Preview Engine<br/>Dry-run OSC inspection"] -.-> A
@@ -125,6 +126,9 @@ uv run python -m beyond_mcp
 | `send_osc_bundle` | Send multiple OSC messages as an atomic bundle |
 | `preview_osc` | Preview an OSC message without sending it (dry-run inspection) |
 | `preview_osc_bundle` | Preview an OSC bundle without sending it |
+| `workspace_info` | Read-only: the loaded workspace and Talk-server settings from BEYOND.ini (Dropbox/BEYOND555 or `$BEYOND_HOME`) |
+| `workspace_pages` | Read-only: page numbers + names of the loaded workspace from its exported page files (`PAGES/<workspace>/Page_NNN_<name>.BeyondPage`); cue names inside BEYOND's files are not readable offline |
+| `workspace_files` | Read-only: list saved BEYOND files of one kind — pages, zones, projectors, shows, showlists, workspaces, quicktargets |
 
 ### Master Controls
 
@@ -342,7 +346,7 @@ uv run python -m beyond_mcp
       "args": ["run", "--directory", "/path/to/beyond-mcp", "python", "-m", "beyond_mcp"],
       "env": {
         "BEYOND_HOST": "127.0.0.1",
-        "BEYOND_OSC_PORT": "12000"
+        "BEYOND_OSC_PORT": "8000"
       }
     }
   }
@@ -359,7 +363,7 @@ uv run python -m beyond_mcp
       "args": ["run", "--directory", "/path/to/beyond-mcp", "python", "-m", "beyond_mcp"],
       "env": {
         "BEYOND_HOST": "127.0.0.1",
-        "BEYOND_OSC_PORT": "12000"
+        "BEYOND_OSC_PORT": "8000"
       }
     }
   }
@@ -380,7 +384,7 @@ Create a `codex.json` MCP config file:
       "args": ["run", "--directory", "/path/to/beyond-mcp", "python", "-m", "beyond_mcp"],
       "env": {
         "BEYOND_HOST": "127.0.0.1",
-        "BEYOND_OSC_PORT": "12000"
+        "BEYOND_OSC_PORT": "8000"
       }
     }
   }
@@ -395,7 +399,7 @@ codex --mcp-config codex.json
 
 ## Production safety
 
-This server is designed for live show environments where accidental commands can disrupt a running laser show. All 117 tools include full parameter validation.
+This server is designed for live show environments where accidental commands can disrupt a running laser show. All 120 tools include full parameter validation.
 
 - **UDP fire-and-forget** -- BEYOND OSC control uses UDP, meaning commands are sent without acknowledgement. There is no rollback. Every tool call is a real action on the laser system.
 - **Host allowlisting** -- only `127.0.0.1`, `localhost`, and `::1` are permitted by default. Add LAN hosts explicitly via `BEYOND_ALLOWED_HOSTS`. Set `*` to allow any host.
@@ -404,7 +408,7 @@ This server is designed for live show environments where accidental commands can
 - **Health check** -- `health_check` verifies BEYOND target reachability via DNS resolution and UDP socket test and reports the resolved address family/socket target.
 - **OSC bundle support** -- `send_osc_bundle` sends multiple OSC messages as an atomic bundle, ensuring all-or-nothing delivery for coordinated multi-parameter changes.
 - **Preview before send** -- `preview_osc` and `preview_osc_bundle` return the exact packet details without transmitting anything. Use them before high-risk live operations.
-- **Input validation** -- all 117 tools with documented parameter ranges enforce bounds before any OSC message is built. Brightness, zoom, scan rate, size, position, rotation, color, BPM, speed, fade times, effect slots, limiter types, geometric correction parameters, and non-negative indexes are all range-checked. Invalid inputs return structured JSON errors, never raw exceptions.
+- **Input validation** -- all tools with documented parameter ranges enforce bounds before any OSC message is built. Brightness, zoom, scan rate, size, position, rotation, color, BPM, speed, fade times, effect slots, limiter types, geometric correction parameters, and non-negative indexes are all range-checked. Invalid inputs return structured JSON errors, never raw exceptions.
 - **Error isolation** -- all tools are wrapped in `_handle_errors`. OSC send failures, JSON parse errors, validation failures, and unexpected exceptions return `{"ok": false, "error": "...", "blocked": true}` instead of crashing the MCP session.
 - **Transport validation** -- only `stdio`, `sse`, and `streamable-http` transports are accepted. Invalid transport values raise immediately at startup.
 - **Port validation** -- `BEYOND_OSC_PORT` is validated as an integer in the 1-65535 range at config load time.
