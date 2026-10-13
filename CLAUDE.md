@@ -38,9 +38,26 @@ Three layers, deliberately thin:
   (cues, zones, projectors, master parameters, beat/BPM, PangoTalk/reference, etc.). Tools are
   thin wrappers over `client.send_osc`; keep protocol logic out of the tool bodies.
 
-OSC is **fire-and-forget UDP** — there is no reply confirming BEYOND acted. `health_check()` and
-the PangoTalk TCP channel (`pango_talk`, when the Talk server is enabled) are the only feedback
-channels. Do not write an OSC tool whose contract implies a confirmed result.
+OSC is **fire-and-forget UDP** — a send gets no reply confirming BEYOND acted. Do not write an OSC
+tool whose contract implies a confirmed result. Feedback does exist, but only through separate
+channels (verified on this rig 2026-10-13, BEYOND 5.5.0.2061):
+
+- **BEYOND's outgoing OSC**, once enabled (Settings > OSC: Enable outgoing communication,
+  Destination IP 127.0.0.1, Outgoing port 8001 on this rig; never 8000, BEYOND's own input).
+  BEYOND then emits feedback for `/beyond/zonesetup/*` and the `/b/` gateway: sending
+  `/beyond/zonesetup/zone N` makes it send all 23 geometry values of that zone. Anything else is
+  sent only when a script asks (`OscOut`, `OscOutTTS`, `RegisterOscFeedback`).
+- **PangoTalk** (`pango_talk`, TCP 16063, when the Talk server is enabled): `Echo 1` gives `OK` /
+  `ERROR` lines, but a property ASSIGNMENT returns nothing when accepted (silence = accepted, an
+  ERROR line within milliseconds = rejected). To confirm a write, read it back:
+  `OscOut "/addr", Zone.0.UGC.SizeX` answers OK and sends the value to the outgoing OSC port (BEYOND
+  pads four zero bytes after the float, so parse by offset). `DisplayPopup <expr>` is a harmless
+  name probe. Send one line at a time and wait for its reply: a line arriving while the previous
+  one runs can be refused as "Unknown function, undeclared or not initialized variable".
+- **Zone geometry names** (Zone.N.UGC.*): SizeX/Y, PositionX/Y, RotationZ, LinearityX/Y,
+  SymmetryX/Y, KeystoneX/Y, PincussionX/Y (two s), BowX/Y, ShearX/Y. They hold the same numbers as
+  the OSC zonesetup values, Position Y's sign included; only the Projection Zones dialog shows Y
+  flipped. Zone.N.SizeX / PositionX without UGC are the Live Control content values, not geometry.
 
 Port reality on this rig (verified 2026-09-03 against BEYOND.ini + netstat): BEYOND's OSC input
 default is **8000** ([OSC] PortIn), and its OSC server ships **disabled** (EnableIn=0) — the old
