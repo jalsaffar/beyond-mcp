@@ -26,6 +26,11 @@ Three layers, deliberately thin:
 - **`talk.py`** — `PangoTalkClient`, the PangoTalk TCP channel (port 16063): one PangoScript
   command per call, CRLF framed, OK/ERROR acknowledgement when BEYOND's Echo is on. The only
   transport with confirmation; BEYOND ships it disabled (enable once in Settings > Network).
+- **`http_api.py`** — `BeyondHttpClient`, read-only state from BEYOND's HTTP server (port 8088, Ultimate 5.8+, off by
+  default, no authentication). Every request is checked against `_READ_PATHS` because some of BEYOND's GET routes act
+  (`/apiv1/playlist/play`, `/apiv1/ps/cmd/...`). The API counts pages and cues from 0, PangoScript from 1; results carry
+  both. It is optional: the Ultimate account license runs on one PC at a time. The spec ships with BEYOND at
+  `<BEYOND folder>\www\beyondswagger\openapi.json`.
 - **`reference.py`** — decompiles `BEYOND_Help.chm` into `~/.beyond-mcp/help-cache` (hh.exe, first
   use only) and greps it: the authoritative PangoScript/OSC syntax lookup. The cache stays out of
   the repo deliberately — Pangolin's copyrighted help content must never be committed.
@@ -87,6 +92,7 @@ An invalid profile name raises at load rather than falling back to `lab`. Preser
 | `BEYOND_HOST` | `127.0.0.1` |
 | `BEYOND_OSC_PORT` | `8000` (BEYOND's own [OSC] PortIn default) |
 | `BEYOND_TALK_PORT` | `16063` (PangoTalk TCP) |
+| `BEYOND_HTTP_PORT` | `8088` (HTTP server, Ultimate 5.8+) |
 | `BEYOND_ALLOWED_HOSTS` | `127.0.0.1,localhost,::1` |
 | `BEYOND_SAFETY_PROFILE` | `lab` |
 | `BEYOND_HELP_CHM` | `~/Dropbox/BEYOND555/BEYOND_Help.chm` |

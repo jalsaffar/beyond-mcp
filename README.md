@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/Tests-310-F59E0B?style=for-the-badge" alt="310 Tests">
 </p>
 
-An MCP server for [Pangolin BEYOND](https://pangolin.com/pages/beyond) laser software. Exposes 120 tools across 21 categories covering show control, cue management, zone configuration, geometric correction, live parameter control, effects, projector alignment, safety limiters, and more — all via OSC.
+An MCP server for [Pangolin BEYOND](https://pangolin.com/pages/beyond) laser software. Exposes 130 tools across 22 categories covering show control, cue management, zone configuration, geometric correction, live parameter control, effects, projector alignment, safety limiters, and more — all via OSC.
 
 Built for live production. Pairs with [grandMA2 MCP](https://github.com/drohi-r/grandma2-mcp), [Resolume MCP](https://github.com/drohi-r/resolume-mcp), [MADRIX MCP](https://github.com/drohi-r/madrix-mcp), and [Companion MCP](https://github.com/drohi-r/companion-mcp) for full AI-driven show control.
 
@@ -66,6 +66,7 @@ See also:
 | `BEYOND_HOST` | `127.0.0.1` | BEYOND instance IP |
 | `BEYOND_OSC_PORT` | `8000` | OSC receive port (BEYOND default) |
 | `BEYOND_TALK_PORT` | `16063` | PangoTalk TCP command port |
+| `BEYOND_HTTP_PORT` | `8088` | HTTP server port (BEYOND Ultimate 5.8+, read-only here) |
 | `BEYOND_ALLOWED_HOSTS` | `127.0.0.1,localhost,::1` | Comma-separated allowlist for target hosts. Set `*` to allow any. |
 | `BEYOND_SAFETY_PROFILE` | `lab` | Safety preset: `lab`, `show-safe`, or `read-only` |
 | `BEYOND_READ_ONLY` | `0` | Set to `1` for read-only mode (blocks all write operations) |
@@ -76,7 +77,7 @@ See also:
 
 ```mermaid
 graph TD
-    A["Beyond MCP Server<br/><code>beyond_mcp</code><br/>120 tools · 21 categories · safety gate"] --> B
+    A["Beyond MCP Server<br/><code>beyond_mcp</code><br/>130 tools · 22 categories · safety gate"] --> B
     B["OSC Client<br/>UDP fire-and-forget"] --> C
     C["Pangolin BEYOND<br/>OSC input on port 8000"]
 
@@ -126,6 +127,13 @@ uv run python -m beyond_mcp
 | `send_osc_bundle` | Send multiple OSC messages as an atomic bundle |
 | `preview_osc` | Preview an OSC message without sending it (dry-run inspection) |
 | `preview_osc_bundle` | Preview an OSC bundle without sending it |
+| `http_probe` | Read-only: is the HTTP server answering (BEYOND Ultimate 5.8+, Settings > HTTP Server settings) |
+| `http_pages` | Read-only: every page name and category, live |
+| `http_page_cues` | Read-only: cue names on one page, with the 1-based numbers for StartCue / ToggleCue |
+| `http_cue` | Read-only: one cue's caption and Live Control values |
+| `http_master` | Read-only: master Live Control values and BPM |
+| `http_zones` | Read-only: zone names, projector numbers, flags, optional geometry |
+| `http_playlist` | Read-only: playlist position and shows, including missing files |
 | `workspace_info` | Read-only: the loaded workspace and Talk-server settings from BEYOND.ini (Dropbox/BEYOND555 or `$BEYOND_HOME`) |
 | `workspace_pages` | Read-only: page numbers + names of the loaded workspace from its exported page files (`PAGES/<workspace>/Page_NNN_<name>.BeyondPage`); cue names inside BEYOND's files are not readable offline |
 | `workspace_files` | Read-only: list saved BEYOND files of one kind — pages, zones, projectors, shows, showlists, workspaces, quicktargets |
@@ -399,7 +407,7 @@ codex --mcp-config codex.json
 
 ## Production safety
 
-This server is designed for live show environments where accidental commands can disrupt a running laser show. All 120 tools include full parameter validation.
+This server is designed for live show environments where accidental commands can disrupt a running laser show. All 130 tools include full parameter validation.
 
 - **UDP fire-and-forget** -- BEYOND OSC control uses UDP, meaning commands are sent without acknowledgement. There is no rollback. Every tool call is a real action on the laser system.
 - **Host allowlisting** -- only `127.0.0.1`, `localhost`, and `::1` are permitted by default. Add LAN hosts explicitly via `BEYOND_ALLOWED_HOSTS`. Set `*` to allow any host.

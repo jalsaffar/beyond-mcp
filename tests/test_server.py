@@ -2484,6 +2484,6 @@ def test_tool_count_is_123():
     from beyond_mcp.server import mcp as server_mcp
 
     tools = server_mcp._tool_manager._tools
-    assert len(tools) == 123, (
-        f"Expected 123 tools, got {len(tools)}: {sorted(tools.keys())}"
+    assert len(tools) == 130, (
+        f"Expected 130 tools, got {len(tools)}: {sorted(tools.keys())}"
     )

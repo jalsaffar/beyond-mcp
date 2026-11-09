@@ -21,6 +21,7 @@ from . import reference as _reference
 from . import workspace as _workspace
 from .client import BeyondClient, build_osc_bundle, build_osc_message
 from .config import load_config
+from .http_api import BeyondHttpClient
 from .talk import PangoTalkClient
 
 
@@ -1338,6 +1339,65 @@ def pango_reference(query: str, limit: int = 12) -> str:
     cache; afterwards lookups are instant. Use before composing pango_talk or
     raw OSC calls so the syntax matches the installed BEYOND version."""
     return _json(_reference.search(query, limit=limit))
+
+
+# ============================================================
+# HTTP server (BEYOND Ultimate 5.8+): read-only state
+# ============================================================
+
+
+@mcp.tool()
+@_handle_errors
+def http_probe() -> str:
+    """Read-only: is BEYOND's HTTP server answering? It needs Ultimate 5.8+ on this PC and
+    Settings > HTTP Server settings > Enable HTTP Server. Check this before the other http_ tools."""
+    return _json(BeyondHttpClient(load_config()).probe())
+
+
+@mcp.tool()
+@_handle_errors
+def http_pages() -> str:
+    """Read-only: every page in the loaded workspace with its name and category, live from BEYOND.
+    `page` counts from 0 for the http_ tools, `script_page` from 1 for PangoScript."""
+    return _json(BeyondHttpClient(load_config()).pages())
+
+
+@mcp.tool()
+@_handle_errors
+def http_page_cues(page: int) -> str:
+    """Read-only: the cue names on one page (page counts from 0). Empty slots are left out.
+    `script_page` and `script_cue` are the 1-based numbers for StartCue / ToggleCue."""
+    return _json(BeyondHttpClient(load_config()).page_cues(page))
+
+
+@mcp.tool()
+@_handle_errors
+def http_cue(page: int, cue: int) -> str:
+    """Read-only: one cue's caption and Live Control values (both count from 0).
+    BEYOND does not report whether a cue is playing."""
+    return _json(BeyondHttpClient(load_config()).cue(page, cue))
+
+
+@mcp.tool()
+@_handle_errors
+def http_master() -> str:
+    """Read-only: master Live Control values and the BPM. Laser output state is not reported."""
+    return _json(BeyondHttpClient(load_config()).master())
+
+
+@mcp.tool()
+@_handle_errors
+def http_zones(include_geometry: bool = False) -> str:
+    """Read-only: zone names, projector numbers (1-based) and flags, trimmed from BEYOND's ~480 KB
+    reply. include_geometry adds each zone's geometric correction values."""
+    return _json(BeyondHttpClient(load_config()).zones(include_geometry))
+
+
+@mcp.tool()
+@_handle_errors
+def http_playlist() -> str:
+    """Read-only: playlist position and the show list, including shows whose file is missing."""
+    return _json(BeyondHttpClient(load_config()).playlist())
 
 
 # ============================================================
